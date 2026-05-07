@@ -1,7 +1,7 @@
-name: Unzip in Same Directory
+name: Unzip Android Project
 
 on:
-  workflow_dispatch: # Manual button ke liye
+  workflow_dispatch:
 
 jobs:
   unzip:
@@ -10,18 +10,30 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Unzip android.zip
+      - name: Check if ZIP exists
         run: |
-          # Is command se files 'app/Android/' ke andar hi unzip hongi
+          if [ ! -f "app/Android/android.zip" ]; then
+            echo "❌ android.zip not found!"
+            exit 1
+          fi
+
+      - name: Unzip Project
+        run: |
+          echo "📦 Unzipping android.zip..."
           unzip -o app/Android/android.zip -d app/Android/
-          
-      - name: Commit and Push
+
+      - name: Commit changes (only if needed)
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Files unzipped in app/Android/" || echo "No changes"
-          git push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add .
+            git commit -m "🔓 Unzipped Android project"
+            git push
+          else
+            echo "✅ No changes to commit"
+          fi

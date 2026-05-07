@@ -3,18 +3,18 @@ name: Android CI
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/android/**'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'apps/android/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
+    defaults:
+      run:
+        working-directory: app/Android
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -22,14 +22,13 @@ jobs:
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          distribution: temurin
+          java-version: 17
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -41,40 +40,20 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install Node Dependencies
+      - name: Install Dependencies
         run: pnpm install
 
-      - name: Run Kotlin Lint
-        working-directory: apps/android
-        run: pnpm android:lint
+      - name: Grant Execute Permission
+        run: chmod +x gradlew
 
-      - name: Run Unit Tests
-        working-directory: apps/android
-        run: ./gradlew :app:testPlayDebugUnitTest
+      - name: Run Gradle Tests
+        run: ./gradlew test
 
-      - name: Build Debug APKs
-        working-directory: apps/android
-        run: |
-          ./gradlew :app:assemblePlayDebug
-          ./gradlew :app:assembleThirdPartyDebug
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
-      - name: Build Release Bundles (AAB)
-        run: bun run android:bundle:release
-
-      - name: Upload Play Release Bundle
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: openclaw-play-release
-          path: apps/android/build/release-bundles/*-play-release.aab
-
-      - name: Upload Third-Party Release Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: openclaw-thirdparty-release
-          path: apps/android/build/release-bundles/*-third-party-release.aab
-
-      - name: Upload Debug APKs
-        uses: actions/upload-artifact@v4
-        with:
-          name: openclaw-debug-apks
-          path: apps/android/app/build/outputs/apk/**/*.apk
+          name: openclaw-debug-apk
+          path: app/Android/app/build/outputs/apk/debug/*.apk

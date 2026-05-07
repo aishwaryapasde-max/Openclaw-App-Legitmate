@@ -1,12 +1,10 @@
-name: Android CI
+name: Android Build CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +16,7 @@ jobs:
         working-directory: app/Android
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -26,16 +24,24 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
-      - name: Grant Gradle Permission
+      - name: Grant Execute Permission
         run: chmod +x gradlew
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Clean Project
+        run: ./gradlew clean
 
-      - name: Upload APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: List APK Output
+        run: |
+          echo "📂 APK Files:"
+          find app/build/outputs -name "*.apk"
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openclaw-debug-apks
-          path: |
-            app/Android/app/build/outputs/apk/**/*.apk
+          name: Aditya-HUD-APK
+          path: app/Android/app/build/outputs/apk/debug/*.apk
